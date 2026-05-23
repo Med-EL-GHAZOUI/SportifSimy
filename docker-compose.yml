@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ss2026
+      POSTGRES_PASSWORD: ss2026
+      POSTGRES_DB: SportifSimy
+    ports:
+      - "5433:5432"
+    volumes:
+      - ss2026_postgres:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://ss2026:ss2026@db:5432/SportifSimy
+      JWT_SECRET: change-this-secret-before-production-ss-2026
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  ss2026_postgres:

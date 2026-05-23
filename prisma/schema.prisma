@@ -1,0 +1,283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  COACH
+  CLIENT
+}
+
+enum ProgramStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum NutritionPlanStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SessionCompletionStatus {
+  COMPLETED
+  SKIPPED
+}
+
+enum ChatSender {
+  CLIENT
+  ASSISTANT
+  COACH
+}
+
+enum NotificationType {
+  PROGRAM
+  NUTRITION
+  CHECKIN
+  REMINDER
+  SYSTEM
+}
+
+enum RecommendationType {
+  TRAINING
+  NUTRITION
+  RECOVERY
+  HABIT
+}
+
+model User {
+  id                  String             @id @default(cuid())
+  email               String             @unique
+  passwordHash        String
+  firstName           String
+  lastName            String
+  role                Role
+  avatarUrl           String?
+  phone               String?
+  weightKg            Decimal?           @db.Decimal(5, 2)
+  heightCm            Int?
+  goal                String?
+  mustChangePassword  Boolean            @default(true)
+  isActive            Boolean            @default(true)
+  coachId             String?
+  coach               User?              @relation("CoachClients", fields: [coachId], references: [id], onDelete: Restrict)
+  clients             User[]             @relation("CoachClients")
+  programsCreated     Program[]          @relation("ProgramCoach")
+  programsAssigned    Program[]          @relation("ProgramClient")
+  completedSessions   CompletedSession[]
+  nutritionCreated    NutritionPlan[]    @relation("NutritionCoach")
+  nutritionAssigned   NutritionPlan[]    @relation("NutritionClient")
+  checkIns            CheckIn[]          @relation("ClientCheckIns")
+  checkInsReviewed    CheckIn[]          @relation("CoachReviewedCheckIns")
+  conversations        ChatConversation[]
+  chatMessages         ChatMessage[]
+  notifications        Notification[]
+  recommendations      Recommendation[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([coachId])
+  @@index([role])
+}
+
+model Program {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  status      ProgramStatus @default(DRAFT)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  coachId     String
+  clientId    String
+  coach       User          @relation("ProgramCoach", fields: [coachId], references: [id], onDelete: Cascade)
+  client      User          @relation("ProgramClient", fields: [clientId], references: [id], onDelete: Cascade)
+  sessions    Session[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([coachId])
+  @@index([clientId])
+  @@index([status])
+}
+
+model Session {
+  id                String             @id @default(cuid())
+  title             String
+  dayOfWeek         Int?
+  durationMinutes   Int
+  notes             String?
+  order             Int                @default(0)
+  programId         String
+  program           Program            @relation(fields: [programId], references: [id], onDelete: Cascade)
+  exercises         Exercise[]
+  completedSessions CompletedSession[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([programId])
+}
+
+model Exercise {
+  id              String   @id @default(cuid())
+  name            String
+  muscleGroup     String?
+  sets            Int
+  reps            String
+  restSeconds     Int?
+  tempo           String?
+  load            String?
+  videoUrl        String?
+  instructions    String?
+  order           Int      @default(0)
+  sessionId       String
+  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([sessionId])
+}
+
+model CompletedSession {
+  id          String                  @id @default(cuid())
+  status      SessionCompletionStatus @default(COMPLETED)
+  completedAt DateTime                @default(now())
+  notes       String?
+  effortRpe   Int?
+  clientId    String
+  sessionId   String
+  client      User                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  session     Session                 @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime                @default(now())
+
+  @@unique([clientId, sessionId, completedAt])
+  @@index([clientId])
+  @@index([sessionId])
+}
+
+model NutritionPlan {
+  id          String              @id @default(cuid())
+  title       String
+  description String?
+  status      NutritionPlanStatus @default(DRAFT)
+  calories    Int
+  proteinG    Int
+  carbsG      Int
+  fatsG       Int
+  startsAt    DateTime?
+  endsAt      DateTime?
+  coachId     String
+  clientId    String
+  coach       User                @relation("NutritionCoach", fields: [coachId], references: [id], onDelete: Cascade)
+  client      User                @relation("NutritionClient", fields: [clientId], references: [id], onDelete: Cascade)
+  meals       Meal[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([coachId])
+  @@index([clientId])
+  @@index([status])
+}
+
+model Meal {
+  id              String        @id @default(cuid())
+  name            String
+  timeLabel       String?
+  calories        Int
+  proteinG        Int
+  carbsG          Int
+  fatsG           Int
+  instructions    String?
+  order           Int           @default(0)
+  nutritionPlanId String
+  nutritionPlan   NutritionPlan @relation(fields: [nutritionPlanId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([nutritionPlanId])
+}
+
+model CheckIn {
+  id              String    @id @default(cuid())
+  weightKg        Decimal   @db.Decimal(5, 2)
+  waistCm         Decimal?  @db.Decimal(5, 2)
+  mood            Int?
+  energy          Int?
+  sleepHours      Decimal?  @db.Decimal(4, 2)
+  notes           String?
+  frontPhotoUrl   String?
+  sidePhotoUrl    String?
+  backPhotoUrl    String?
+  reviewedAt      DateTime?
+  coachFeedback   String?
+  clientId        String
+  reviewedById    String?
+  client          User      @relation("ClientCheckIns", fields: [clientId], references: [id], onDelete: Cascade)
+  reviewedBy      User?     @relation("CoachReviewedCheckIns", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([reviewedById])
+}
+
+model ChatConversation {
+  id        String        @id @default(cuid())
+  title     String
+  clientId  String
+  client    User          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([clientId])
+}
+
+model ChatMessage {
+  id             String           @id @default(cuid())
+  sender         ChatSender
+  content        String
+  intent         String?
+  conversationId String
+  userId         String?
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  dueAt     DateTime?
+  clientId  String
+  client    User             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([clientId])
+  @@index([readAt])
+  @@index([dueAt])
+}
+
+model Recommendation {
+  id         String             @id @default(cuid())
+  type       RecommendationType
+  title      String
+  body       String
+  confidence Int                @default(70)
+  clientId   String
+  client     User               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt  DateTime           @default(now())
+
+  @@index([clientId])
+  @@index([type])
+}

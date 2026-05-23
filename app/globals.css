@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 33% 98%;
+  --foreground: 204 10% 20%;
+  --card: 0 0% 100%;
+  --border: 204 14% 88%;
+  --muted: 205 22% 95%;
+  --primary: 244 75% 58%;
+  --accent: 175 98% 78%;
+  --success: 174 100% 21%;
+}
+
+.dark {
+  --background: 222 47% 6%;
+  --foreground: 214 32% 96%;
+  --card: 222 38% 10%;
+  --border: 222 28% 20%;
+  --muted: 222 24% 14%;
+  --primary: 246 84% 67%;
+  --accent: 176 80% 46%;
+  --success: 145 60% 48%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #f7f9fb;
+  color: hsl(var(--foreground));
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.glass {
+  background: color-mix(in srgb, hsl(var(--card)) 86%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.ss-page {
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .ss-page {
+    padding: 3rem;
+  }
+}
+
+.ss-container {
+  margin-inline: auto;
+  max-width: 1200px;
+}
+
+.ss-card {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 1.5rem;
+  background: #ffffff;
+  box-shadow: 0 8px 32px rgba(45, 51, 55, 0.06);
+}
+
+.ss-soft-panel {
+  border-radius: 1.25rem;
+  background: #f1f4f6;
+}
+
+.ss-label {
+  color: #596063;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
